@@ -100,7 +100,7 @@ int main(){
     // ============================================================
 
     // Crear hilos
-    pthread_t threadsID;
+    pthread_t threadsID[n];
 
     for (int repetitions = 0; repetitions < 100; repetitions++){
 
@@ -109,9 +109,13 @@ int main(){
             int *row = malloc(sizeof(int));
             *row = i;        
             // Crea hilo por cada fila de matriz resultante
-            pthread_create(&threadsID, NULL, (void *) multiplyRow, (void *) row);
+            pthread_create(&threadsID[i], NULL, (void *) multiplyRow, (void *) row);
         }
-        pthread_join(threadsID, NULL);
+        
+        // Esperar a que terminen los hilos
+        for (int i = 0; i < n; i++){
+            pthread_join(threadsID[i], NULL);
+        }
 
         clock_t end = clock(); // Fin de la medicion de tiempo
         double time_spent = (double)(end - start) / CLOCKS_PER_SEC; // Tiempo de ejecucion de la multiplicacion

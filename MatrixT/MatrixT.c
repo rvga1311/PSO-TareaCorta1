@@ -98,13 +98,16 @@ int main(){
 
 
     // ============================================================
+    struct timespec start, finish;
+    double time_spent;
+
 
     // Crear hilos
     pthread_t threadsID[n];
 
     for (int repetitions = 0; repetitions < 100; repetitions++){
 
-        clock_t start = clock(); // Inicio de la medicion de tiempo
+        clock_gettime(CLOCK_MONOTONIC, &start); // Inicio de la medicion de tiempo
         for (int i = 0; i < n; i++){
             int *row = malloc(sizeof(int));
             *row = i;        
@@ -117,9 +120,11 @@ int main(){
             pthread_join(threadsID[i], NULL);
         }
 
-        clock_t end = clock(); // Fin de la medicion de tiempo
-        double time_spent = (double)(end - start) / CLOCKS_PER_SEC; // Tiempo de ejecucion de la multiplicacion
+        clock_gettime(CLOCK_MONOTONIC, &finish); // Fin de la medicion de tiempo
+        time_spent = (finish.tv_sec - start.tv_sec);
+        time_spent += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
         averageTime += time_spent;
+
         // Guardar resultados en archivo
         saveResult_Stats(repetitions, time_spent);
 

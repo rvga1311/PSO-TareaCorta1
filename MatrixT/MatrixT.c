@@ -41,8 +41,8 @@ void freeMemory(){
 void fillMatrix(){
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            matrix1[i][j] = rand() % 1000;
-            matrix2[i][j] = rand() % 1000;
+            matrix1[i][j] = rand() % 100;
+            matrix2[i][j] = rand() % 100;
             matrixResult [i][j] = 0;
         }
     }

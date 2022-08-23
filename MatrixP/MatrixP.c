@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-
+#include <sys/shm.h>
 #include <sys/wait.h>
 
 int n;
@@ -42,38 +42,27 @@ void freeMemory()
 {
     for (int i = 0; i < n; i++)
     {
-        munmap(matrix1[i], sizeof(int) * n);
-        munmap(matrix2[i], sizeof(int) * n);
+        free(matrix1[i]);
+        free(matrix2[i]);
         munmap(matrixResult[i], sizeof(int) * n);
     }
-    munmap(matrix1, sizeof(int *) * n);
-    munmap(matrix2, sizeof(int *) * n);
+    free(matrix1);
+    free(matrix2);
     munmap(matrixResult, sizeof(int *) * n);
 }
 
 void fillMatrix()
 {
-    matrix1 = (int **)mmap(NULL, sizeof(int *) * 2, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    matrix2 = (int **)mmap(NULL, sizeof(int *) * 2, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    matrixResult = (int **)mmap(NULL, sizeof(int *) * 2, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-
-    // fill the matrix with random numbers
-    for (int i = 0; i < n; i++)
-    {
-        matrix1[i] = (int *)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
-                                 MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-        matrix2[i] = (int *)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
-                                 MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-        matrixResult[i] = (int *)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
-                                      MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-        for (int j = 0; j < n; j++)
-        {
+     for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
             matrix1[i][j] = rand() % 100;
             matrix2[i][j] = rand() % 100;
-            matrixResult[i][j] = 0;
+            matrixResult [i][j] = 0;
         }
-    }
+    } 
+    
 }
+    
 
 void saveResult_Stats(int repetition, double stats)
 {
@@ -115,17 +104,15 @@ int main()
     scanf("%d", &n);
 
     // Alocar memoria para las matrices
-    matrix1 = (int **)mmap(NULL, sizeof(int *) * 2, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    matrix2 = (int **)mmap(NULL, sizeof(int *) * 2, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    matrixResult = (int **)mmap(NULL, sizeof(int *) * 2, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    matrix1 = (int**)malloc(n * sizeof(int*));
+    matrix2 = (int**)malloc(n * sizeof(int*));
+    matrixResult = (int **)mmap(NULL, sizeof(int *) * (n*n), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
     for (int i = 0; i < n; i++)
     {
-        matrix1[i] = (int *)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
-                                 MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-        matrix2[i] = (int *)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
-                                 MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-        matrixResult[i] = (int *)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
+        matrix1[i] = (int*)malloc(n * sizeof(int));
+        matrix2[i] = (int*)malloc(n * sizeof(int));
+        matrixResult[i] =(int *)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
                                       MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     }
 
@@ -179,6 +166,8 @@ int main()
         averageTime += time_spent;
         // Guardar resultados en archivo
         saveResult_Stats(repetitions, time_spent);
+
+      
         
         // Limpiar matrices
         fillMatrix();

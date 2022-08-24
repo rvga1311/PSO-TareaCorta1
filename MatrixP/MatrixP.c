@@ -12,7 +12,8 @@ int n;
 int **matrix1;
 int **matrix2;
 int **matrixResult;
-pid_t childPID;
+
+pid_t originalProcess;
 
 void printMatrix(int **matrix)
 {
@@ -53,16 +54,16 @@ void freeMemory()
 
 void fillMatrix()
 {
-     for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
             matrix1[i][j] = rand() % 100;
             matrix2[i][j] = rand() % 100;
-            matrixResult [i][j] = 0;
+            matrixResult[i][j] = 0;
         }
-    } 
-    
+    }
 }
-    
 
 void saveResult_Stats(int repetition, double stats)
 {
@@ -99,20 +100,21 @@ int main()
 {
     // Cambiar seed del random
     srand(time(NULL));
+    originalProcess = getpid();
 
     printf("Indique el valor de N: ");
     scanf("%d", &n);
 
     // Alocar memoria para las matrices
-    matrix1 = (int**)malloc(n * sizeof(int*));
-    matrix2 = (int**)malloc(n * sizeof(int*));
-    matrixResult = (int **)mmap(NULL, sizeof(int *) * (n*n), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    matrix1 = (int **)malloc(n * sizeof(int *));
+    matrix2 = (int **)malloc(n * sizeof(int *));
+    matrixResult = (int **)mmap(NULL, sizeof(int *) * (n * n), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
     for (int i = 0; i < n; i++)
     {
-        matrix1[i] = (int*)malloc(n * sizeof(int));
-        matrix2[i] = (int*)malloc(n * sizeof(int));
-        matrixResult[i] =(int *)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
+        matrix1[i] = (int *)malloc(n * sizeof(int));
+        matrix2[i] = (int *)malloc(n * sizeof(int));
+        matrixResult[i] = (int *)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
                                       MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     }
 
@@ -123,45 +125,35 @@ int main()
 
     // ============================================================
 
-  
     struct timespec start, finish;
     double time_spent;
     for (int repetitions = 0; repetitions < 100; repetitions++)
     {
-       
 
         clock_gettime(CLOCK_MONOTONIC, &start); // Inicio de la medicion de tiempo
-        for (int i = 0; i < n; i++)
+        for (size_t i = 0; i < n; i++)
         {
             int *row = malloc(sizeof(int));
             *row = i;
-            // Crea Subproceso por cada fila de matriz resultante
-            childPID = fork();
-            if (childPID >= 0) // fork was successful
-            {
-                if (childPID == 0) // child process
-                {
-                    
-                     multiplyRow(row);
 
-                    exit(EXIT_SUCCESS);
-                }
-                else
-                {
-                    wait(NULL);
-                    
-                    
-                }
-            }
-            else // fork failed
-            {
-                printf("\n Fork failed, quitting!!!!!!\n");
-                return 1;
-            }
+            fork();
 
-            // Fin de Suprocesos
+            if (getpid() == originalProcess)
+            {
+                continue;
+            }
+            else
+            {
+                multiplyRow(row);
+
+                exit(EXIT_SUCCESS);
+            }
         }
-
+        while(wait(NULL) > 0);
+        if (getpid() != originalProcess)
+        {
+            exit(EXIT_SUCCESS);
+        }
         clock_gettime(CLOCK_MONOTONIC, &finish); // Fin de la medicion de tiempo
         time_spent = (finish.tv_sec - start.tv_sec);
         time_spent += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
@@ -169,8 +161,6 @@ int main()
         // Guardar resultados en archivo
         saveResult_Stats(repetitions, time_spent);
 
-      
-        
         // Limpiar matrices
         fillMatrix();
     }
@@ -181,7 +171,7 @@ int main()
     fclose(file);
 
     // Liberar memoria
-     freeMemory();
+    freeMemory();
 
     return 0;
 }

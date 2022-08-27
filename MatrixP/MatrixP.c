@@ -149,7 +149,9 @@ int main()
                 exit(EXIT_SUCCESS);
             }
         }
-        while(wait(NULL) > 0);
+        while(wait(NULL) > 0){
+            sleep(0.001);
+        }
         if (getpid() != originalProcess)
         {
             exit(EXIT_SUCCESS);
